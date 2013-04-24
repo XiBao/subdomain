@@ -1,3 +1,3 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Route extends Subdomain_Route { }
+class Request extends Subdomain_Request { }
