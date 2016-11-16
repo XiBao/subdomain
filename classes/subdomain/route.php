@@ -9,13 +9,19 @@ class Subdomain_Route extends Kohana_Route {
 	/**
 	 * @var  string  route SUBDOMAIN
 	 */
-	protected $_subdomain ;
+	protected $_subdomain;
+
+    /**
+     * @var  string domains
+     */
+    protected $_domains;
 	
 	public function __construct($uri = NULL, $regex = NULL) {
 		parent::__construct($uri, $regex) ;
 		
         // Set default subdomains in this route rule
-		$this->_subdomain = self::$default_subdomains ;
+		$this->_subdomain = self::$default_subdomains;
+        $this->_domains   = self::SUBDOMAIN_WILDCARD;
 	}
 
 
@@ -29,23 +35,47 @@ class Subdomain_Route extends Kohana_Route {
 	 *         ));
      *
 	 * @param   array    name(s) of subdomain(s) to apply in route
-     * @return Route
+     * @return $this
      */      
     public function subdomains(array $name) {
         $this->_subdomain = $name ;
 
         return $this ;
     }
+
+    /**
+     * @param array $domains
+     *
+     * @return $this
+     */
+    public function domains(array $domains) {
+        $this->_domains = $domains;
+        
+        return $this;
+    }
 	
-	public function matches($uri, $subdomain = NULL) {
-		$subdomain = ($subdomain === NULL) ? Request::$subdomain : $subdomain ;
+	public function matches($uri, array $subdomain = NULL) {
+		$subdomain = ($subdomain === NULL) ? Request::$subdomain : $subdomain;
 		
 		if($subdomain === FALSE) {
 			$subdomain = self::SUBDOMAIN_EMPTY ;
 		}
 		
-		if( in_array(self::SUBDOMAIN_WILDCARD, $this->_subdomain) || in_array($subdomain, $this->_subdomain) ) {
-			return parent::matches($uri) ;
+		if (in_array(self::SUBDOMAIN_WILDCARD, $this->_subdomain) || in_array($subdomain, $this->_subdomain)) {
+            if ($this->_domains === self::SUBDOMAIN_WILDCARD) {
+                return parent::matches($uri) ;
+            }
+            
+            if (!is_array($this->_domains) || !isset($_SERVER['HTTP_HOST'])) {
+                return false;
+            }
+            
+            $host_rev = strrev($_SERVER['HTTP_HOST']);
+            foreach ($this->_domains as $v) {
+                if ($v === $_SERVER['HTTP_HOST'] || stripos($host_rev, strrev($v).'.') === 0) {
+                    return parent::matches($uri);
+                }
+            }
 		}
 		
 		return FALSE;
