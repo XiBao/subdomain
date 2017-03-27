@@ -19,7 +19,7 @@ class Subdomain_Request extends Kohana_Request {
 		}
 		
 		if($host === NULL) {
-			if( Kohana::$is_cli ) {
+			if( Kohana::$is_cli || empty($_SERVER['HTTP_HOST']) {
 				return FALSE ;
 			}
 			
